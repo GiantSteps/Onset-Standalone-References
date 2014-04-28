@@ -13,6 +13,19 @@ def computeOnsetsModal(f):
     audio = np.asarray(audio, dtype=np.double)
     audio /= np.max(audio)
 
+    #Mono mix ripped from SuperFlux
+    channels = 0
+    try:
+        # multi channel files
+        channels = np.shape(audio)[1]
+    except IndexError:
+        # catch mono files
+        channels = 1
+
+    if channels > 1:
+        audio = np.mean(audio, axis=-1, dtype=audio.dtype)
+
+
     frame_size = 2048
     hop_size = 512
 
@@ -96,7 +109,6 @@ def main():
 		#Call your processing function here
         onsets = computeOnsetsModal(f)
 
-        print onsets
         onsetsSecs = onsets / 44100.0
         
         np.savetxt(outFile, onsetsSecs, fmt='%f')

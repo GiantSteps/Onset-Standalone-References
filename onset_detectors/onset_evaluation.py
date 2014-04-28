@@ -147,6 +147,27 @@ class Counter(object):
             print "%i events & Precision & Recall & F-measure & True Positves & False Positives & Accuracy & Delay\\\\" % (self.num)
             print "tex & %.3f & %.3f & %.3f & %.3f & %.3f & %.3f %.1f\$\\pm\$%.1f\\,ms\\\\" % (self.precision, self.recall, self.fmeasure, self.true_positive_rate, self.false_positive_rate, self.accuracy, np.mean(self.dev) * 1000., np.std(self.dev) * 1000.)
 
+    def print_csv(self):
+        print 'targets, correct, fp, fn, p, r, f, tp, fp, acc, mean, std' 
+        print '%5d, %5d, %4d, %4d, %.3f, %.3f, %.3f, %.1f%%, %.1f%%, %.1f%%, %.1f, %.1f' % (self.num, self.tp, self.fp, self.fn, self.precision, self.recall, self.fmeasure, self.true_positive_rate * 100., self.false_positive_rate * 100., self.accuracy * 100., np.mean(self.dev) * 1000., np.std(self.dev) * 1000.)
+
+    def result_dict(self):
+        resultDict = {
+            'targets' : self.num, 
+            'correct' : self.tp, 
+            'fp' : self.fp, 
+            'fn' : self.fn, 
+            'p' : self.precision, 
+            'r' : self.recall, 
+            'f' : self.fmeasure, 
+            'tp' : self.true_positive_rate * 100., 
+            'fp' : self.false_positive_rate * 100., 
+            'acc' : self.accuracy * 100., 
+            'mean' : np.mean(self.dev) * 1000., 
+            'std' : np.std(self.dev) * 1000.
+        }
+
+        return resultDict
 
 def load_events(filename):
     """
@@ -283,7 +304,8 @@ def main():
     Music Information Retrieval Conference (ISMIR 2012)
 
     """)
-    p.add_argument('files', metavar='files', nargs='+', help='path or files to be evaluated (list of files being filtered according to -d and -t arguments)')
+    p.add_argument('filesDet', metavar='filesDet', nargs='+', help='path to detected files to be evaluated (list of files being filtered according to -d and -t arguments)')
+    p.add_argument('filesTar', metavar='filesTar', nargs='+', help='path to target files to be evaluated (list of files being filtered according to -d and -t arguments)')
     p.add_argument('-v', dest='verbose', action='store_true', help='be verbose')
     # extensions used for evaluation
     p.add_argument('-d', dest='detections', action='store', default='.onsets.txt', help='extensions of the detections [default: .onsets.txt]')
@@ -304,23 +326,43 @@ def main():
     args.delay /= 1000.
 
     # determine the files to process
-    files = []
-    for f in args.files:
+    filesDet = []
+    for f in args.filesDet:
         # check what we have (file/path)
         if os.path.isdir(f):
             # use all files in the given path
-            files = glob.glob(f + '/*')
+            filesDet = glob.glob(f + '/*')
         else:
             # file was given, append to list
-            files.append(f)
+            filesDet.append(f)
     # sort files
-    files.sort()
+    filesDet.sort()
+
+    # determine the files to process
+    filesTar = []
+    for f in args.filesTar:
+        # check what we have (file/path)
+        if os.path.isdir(f):
+            # use all files in the given path
+            filesTar = glob.glob(f + '/*')
+        else:
+            # file was given, append to list
+            filesTar.append(f)
+    # sort files
+    filesTar.sort()
+
 
     # TODO: find a better way to determine the corresponding detection/target files from a given list/path of files
     # filter target files
-    tar_files = fnmatch.filter(files, "*%s" % args.targets)
+    tar_files = fnmatch.filter(filesTar, "*%s" % args.targets)
+    #Dirty hack if the GT is not .onsets
+    if not tar_files:
+        tar_files = fnmatch.filter(filesTar, "*%s" % '.txt')
+
     # filter detection files
-    det_files = fnmatch.filter(files, "*%s" % args.detections)
+    det_files = fnmatch.filter(filesDet, "*%s" % args.detections)
+
+    
     # must be the same number
     assert len(tar_files) == len(det_files), "different number of targets (%i) and detections (%i)" % (len(tar_files), len(det_files))
 
@@ -340,8 +382,10 @@ def main():
         # add to sum counter
         sum_counter += counter
     # print summary
-    print 'summary for %i files; detection window %.1f ms (+- %.1f ms)' % (len(det_files), args.window * 2000, args.window * 1000)
-    sum_counter.print_errors(args.tex)
+    #print 'summary for %i files; detection window %.1f ms (+- %.1f ms)' % (len(det_files), args.window * 2000, args.window * 1000)
+    #sum_counter.print_errors(args.tex)
+    sum_counter.print_csv()
+    return sum_counter.result_dict()
 
 if __name__ == '__main__':
     main()
