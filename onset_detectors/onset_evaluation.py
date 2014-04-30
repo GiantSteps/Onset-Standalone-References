@@ -384,8 +384,10 @@ def main():
     # print summary
     #print 'summary for %i files; detection window %.1f ms (+- %.1f ms)' % (len(det_files), args.window * 2000, args.window * 1000)
     #sum_counter.print_errors(args.tex)
-    sum_counter.print_csv()
-    return sum_counter.result_dict()
+#    sum_counter.print_csv()
+    outputDict = sum_counter.result_dict()
+    outputDict['files'] = len(det_files)
+    return outputDict
 
 if __name__ == '__main__':
     main()

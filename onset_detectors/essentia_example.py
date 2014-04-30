@@ -83,6 +83,7 @@ def computeOnsets(inFile, outFile):
                         [ 1 ])
     np.savetxt(outFile, onsets_hfc, fmt='%f')
 
+    #Let's just take the complex as an example
     onsets_complex = onsets(array([ pool['features.complex'] ]), [ 1 ])
 
     np.savetxt(outFile, onsets_complex, fmt='%f')
